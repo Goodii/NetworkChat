@@ -1,5 +1,6 @@
 #include "Client.h"
 #include <iostream>
+#include "GameMessages.h"
 
 using std::cout;
 
@@ -11,6 +12,8 @@ Client::~Client() {
 }
 
 bool Client::startup() {
+
+	std::cout << "Enter a username: "; std::cin >> m_user.username;
 
 	handleNetworkConnection();
 
@@ -26,8 +29,19 @@ void Client::shutdown() {
 
 void Client::update() {
 
-	while(true)
+	while (true)
+	{		
+		//multithread network updates and input
 		handleNetworkMessages();
+		
+		//if (typing)
+		//{
+		//	typing = false;
+		//	std::cin >> m_user.message;
+		//	sendClientData();
+		//}
+
+	}
 }
 
 void Client::handleNetworkConnection()
@@ -86,11 +100,51 @@ void Client::handleNetworkMessages()
 		case ID_CONNECTION_LOST:
 			cout << "Connection lost.\n";
 			break;
-
+		case ID_SERVER_SET_CLIENT_ID:
+			onSetClientIDPacket(packet);
+			break;
 		default:
-			//cout << "Received a message with an unkown id: " << packet->data[0] << std::endl;
+			cout << "Received a text message with an unkown id: " << packet->data[0] << std::endl;
 			break;
 		}
 	}
 }
 
+void Client::onSetClientIDPacket(RakNet::Packet* packet)
+{
+	RakNet::BitStream bsIn(packet->data, packet->length, false);
+	bsIn.IgnoreBytes(sizeof(RakNet::MessageID));
+	bsIn.Read(m_clientID);
+
+	cout << "Set my client ID to: " << m_clientID << std::endl;
+}
+
+void Client::sendClientData()
+{
+	RakNet::BitStream bs;
+	bs.Write((RakNet::MessageID)GameMessages::ID_CLIENT_CLIENT_DATA);
+	bs.Write(m_clientID);
+	bs.Write((char*)&m_user, sizeof(UserData));
+
+	m_pPeerInterface->Send(&bs, HIGH_PRIORITY, RELIABLE_ORDERED, 0,
+		RakNet::UNASSIGNED_SYSTEM_ADDRESS, true);
+}
+
+void Client::onReceivedClientDataPacket(RakNet::Packet* packet)
+{
+	RakNet::BitStream bsIn(packet->data, packet->length, false);
+	bsIn.IgnoreBytes(sizeof(RakNet::MessageID));
+
+	int clientID;
+	bsIn.Read(clientID);
+
+	//if clientID does not match our ID, update our client GameObject information
+	if (clientID != m_clientID)
+	{
+		UserData clientData;
+		bsIn.Read((char*)&clientData, sizeof(UserData));
+		
+		//output GameObject information to console
+		cout << clientData.username;// << " : " << clientData.message << std::endl;
+	}
+}
