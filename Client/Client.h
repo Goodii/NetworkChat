@@ -6,8 +6,8 @@
 
 struct UserData
 {
-	char username[16];
-	char message[80];
+	std::string username;
+	std::string message;
 };
 
 class Client {
@@ -33,6 +33,7 @@ public:
 	void handleNetworkMessages();
 
 protected:
+	void enterMessage();
 
 	RakNet::RakPeerInterface* m_pPeerInterface;
 	int m_clientID;

@@ -1,8 +1,11 @@
 #include "Client.h"
 #include <iostream>
 #include "GameMessages.h"
+#include <thread>
+#include <mutex>
+#include <sstream>
 
-using std::cout;
+using namespace std;
 
 Client::Client() {
 
@@ -13,10 +16,10 @@ Client::~Client() {
 
 bool Client::startup() {
 
-	std::cout << "Enter a username: "; std::cin >> m_user.username;
+	cout << "Enter a username: "; getline(cin, m_user.username);
 
 	handleNetworkConnection();
-
+	
 	update();
 
 	return true;
@@ -29,15 +32,16 @@ void Client::shutdown() {
 
 void Client::update() {
 
+	
+
 	while (true)
 	{		
-		//multithread network updates and input
 		handleNetworkMessages();
 		
 		//if (typing)
 		//{
 		//	typing = false;
-		//	std::cin >> m_user.message;
+		//	enterMessage();
 		//	sendClientData();
 		//}
 
@@ -60,7 +64,7 @@ void Client::initialiseClientConnection()
 	//Now call startup - max of 1 connection (to the server)
 	m_pPeerInterface->Startup(1, &sd, 1);
 
-	cout << "Connecting to server at: " << IP << std::endl;
+	cout << "Connecting to server at: " << IP << endl;
 
 	//call connect to attempt to connect to the given server
 	RakNet::ConnectionAttemptResult res = m_pPeerInterface->Connect(IP, PORT, nullptr, 0);
@@ -68,7 +72,7 @@ void Client::initialiseClientConnection()
 	//finaly, check to see if we connected, and if not, throw an error
 	if (res != RakNet::CONNECTION_ATTEMPT_STARTED)
 	{
-		cout << "Unable to start connection, Error number: " << res << std::endl;
+		cout << "Unable to start connection, Error number: " << res << endl;
 	}
 }
 
@@ -104,7 +108,7 @@ void Client::handleNetworkMessages()
 			onSetClientIDPacket(packet);
 			break;
 		default:
-			cout << "Received a text message with an unkown id: " << packet->data[0] << std::endl;
+			cout << "Received a text message with an unkown id: " << packet->data[0] << endl;
 			break;
 		}
 	}
@@ -116,7 +120,7 @@ void Client::onSetClientIDPacket(RakNet::Packet* packet)
 	bsIn.IgnoreBytes(sizeof(RakNet::MessageID));
 	bsIn.Read(m_clientID);
 
-	cout << "Set my client ID to: " << m_clientID << std::endl;
+	cout << "Set my client ID to: " << m_clientID << endl;
 }
 
 void Client::sendClientData()
@@ -145,6 +149,11 @@ void Client::onReceivedClientDataPacket(RakNet::Packet* packet)
 		bsIn.Read((char*)&clientData, sizeof(UserData));
 		
 		//output GameObject information to console
-		cout << clientData.username;// << " : " << clientData.message << std::endl;
+		cout << clientData.username.c_str() << " : " << clientData.message.c_str() << endl;
 	}
+}
+
+void Client::enterMessage()
+{
+	std::cin >> m_user.message;
 }

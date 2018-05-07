@@ -76,6 +76,7 @@ void handleNetworkMessages(RakNet::RakPeerInterface* pPeerInterface)
 			case ID_CLIENT_CLIENT_DATA:
 			{
 				RakNet::BitStream bs(packet->data, packet->length, false);
+				std::cout << "User - " << packet->data[0] << std::endl;
 				pPeerInterface->Send(&bs, HIGH_PRIORITY, RELIABLE_ORDERED, 0, packet->systemAddress, true);
 				break;
 			}
